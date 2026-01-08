@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detekcja Ransomware</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spinner {
+            border: 4px solid #3f3f46;
+            border-top: 4px solid #fafafa;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 min-h-screen flex justify-center items-center p-5">
+    <div class="bg-zinc-900 rounded-lg shadow-sm border border-zinc-800 max-w-md w-full p-8">
+        <h1 class="text-2xl font-semibold text-center text-zinc-100 mb-1">Ransomware Check</h1>
+        <p class="text-center text-zinc-400 text-xs mb-6 tracking-wide uppercase">Analiza bezpieczeństwa pliku</p>
+        
+        <div class="border border-dashed border-zinc-700 rounded-lg p-8 text-center cursor-pointer transition-all hover:border-zinc-600 hover:bg-zinc-800" id="uploadArea">
+            <div class="text-4xl mb-3 opacity-75">📄</div>
+            <div class="font-medium text-zinc-300 mb-1 text-sm">Kliknij lub przeciągnij plik</div>
+            <div class="text-xs text-zinc-500">Maks. 16MB</div>
+        </div>
+        
+        <div id="fileName" class="text-zinc-300 text-xs font-medium mt-3 p-2 bg-zinc-800 rounded hidden break-all"></div>
+        
+        <div id="fileTypeSelector" class="mt-3 hidden relative">
+            <label class="block text-zinc-400 text-xs mb-2">Wybierz typ pliku:</label>
+            <select id="fileTypeSelect" class="w-full bg-zinc-800 text-zinc-100 border border-zinc-700 rounded px-3 py-2 pr-10 text-sm focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-colors cursor-pointer hover:border-zinc-600 appearance-none">
+                <option value="">Ładowanie...</option>
+            </select>
+            <svg class="absolute right-3 top-[2.15rem] w-4 h-4 pointer-events-none text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </div>
+        
+        <div class="loading hidden text-center my-4" id="loading">
+            <div class="spinner"></div>
+            <p class="text-zinc-400 text-xs">Przetwarzanie...</p>
+        </div>
+        
+        <div class="result hidden p-4 rounded-lg mt-4 text-xs" id="result"></div>
+        
+        <div class="flex gap-2 mt-6">
+            <button class="flex-1 py-2 px-4 bg-zinc-100 text-zinc-950 text-sm font-medium rounded hover:bg-zinc-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" id="uploadBtn" disabled>
+                Sprawdź
+            </button>
+            <button class="flex-1 py-2 px-4 bg-zinc-800 text-zinc-100 text-sm font-medium rounded hover:bg-zinc-700 transition-colors border border-zinc-700" id="resetBtn">
+                Usuń
+            </button>
+        </div>
+        
+        <input type="file" id="fileInput" class="hidden">
+    </div>
+    
+    <script>
+        let selectedFile = null;
+        let fileTypes = [];
+        
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const fileName = document.getElementById('fileName');
+        const fileTypeSelector = document.getElementById('fileTypeSelector');
+        const fileTypeSelect = document.getElementById('fileTypeSelect');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        
+        async function loadFileTypes() {
+            try {
+                const response = await fetch('/api/file-types');
+                const data = await response.json();
+                fileTypes = data.types;
+                fileTypeSelect.innerHTML = '<option value="">-- Wybierz typ --</option>';
+                fileTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type.index;
+                    option.textContent = type.name;
+                    fileTypeSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Błąd ładowania typów:', error);
+                fileTypeSelect.innerHTML = '<option value="">Błąd ładowania</option>';
+            }
+        }
+        loadFileTypes();
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        function autoSelectFileType(filename) {
+            const extension = filename.split('.').pop().toLowerCase();
+            const matchedType = fileTypes.find(type => type.name.toLowerCase() === extension);
+            if (matchedType) {
+                fileTypeSelect.value = matchedType.index;
+            } else {
+                fileTypeSelect.value = '';
+            }
+        }
+        
+        fileInput.addEventListener('change', (e) => {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                fileName.textContent = `📄 ${selectedFile.name}`;
+                fileName.classList.remove('hidden');
+                fileTypeSelector.classList.remove('hidden');
+                autoSelectFileType(selectedFile.name);
+                updateUploadButton();
+            }
+        });
+        fileTypeSelect.addEventListener('change', updateUploadButton);
+        
+        function updateUploadButton() {
+            uploadBtn.disabled = !selectedFile || !fileTypeSelect.value;
+        }
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('bg-zinc-800', 'border-zinc-600');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('bg-zinc-800', 'border-zinc-600');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('bg-zinc-800', 'border-zinc-600');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                selectedFile = files[0];
+                fileName.textContent = `📄 ${selectedFile.name}`;
+                fileName.classList.remove('hidden');
+                fileTypeSelector.classList.remove('hidden');
+                autoSelectFileType(selectedFile.name);
+                updateUploadButton();
+            }
+        });
+        
+        uploadBtn.addEventListener('click', async () => {
+            if (!selectedFile || !fileTypeSelect.value) return;
+            
+            loading.classList.remove('hidden');
+            result.classList.add('hidden');
+            uploadBtn.disabled = true;
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('fileTypeIndex', fileTypeSelect.value);
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(data);
+                } else {
+                    showError(data.error || 'Błąd podczas przetwarzania');
+                }
+            } catch (error) {
+                showError('Błąd połączenia: ' + error.message);
+            } finally {
+                loading.classList.add('hidden');
+                uploadBtn.disabled = false;
+            }
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            fileName.classList.add('hidden');
+            fileTypeSelector.classList.add('hidden');
+            fileTypeSelect.value = '';
+            result.classList.add('hidden');
+            loading.classList.add('hidden');
+            uploadBtn.disabled = true;
+        });
+        
+        function showResult(data) {
+            const isRansomware = data.is_ransomware;
+            const confidence = Math.round(data.confidence * 100);
+            const entropy = data.entropy ? data.entropy.toFixed(4) : 'N/A';
+            const variance = data.variance ? data.variance.toFixed(4) : 'N/A';
+            
+            const bgClass = isRansomware ? 'bg-zinc-800 border border-yellow-700' : 'bg-zinc-800 border border-zinc-700';
+            const textClass = isRansomware ? 'text-yellow-100' : 'text-zinc-100';
+            const titleEmoji = isRansomware ? '⚠️' : '✅';
+            const status = isRansomware ? 'PODEJRZANY' : 'BEZPIECZNY';
+            
+            result.className = `result ${bgClass} ${textClass} p-4 rounded-lg mt-4 text-xs`;
+            result.innerHTML = `
+                <div class="font-medium text-sm mb-2">
+                    ${titleEmoji} ${isRansomware ? 'Zaszyfrowany' : 'Nie zaszyfrowany'}
+                </div>
+                <div class="mb-3 opacity-90">
+                    <strong>${data.filename}</strong><br>
+                    Status: <strong>${status}</strong>
+                </div>
+                <div class="mb-3 bg-zinc-900 p-3 rounded border border-zinc-700">
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <div class="text-zinc-400">Entropia Shannona</div>
+                            <div class="text-white font-mono font-semibold">${entropy}</div>
+                        </div>
+                        <div>
+                            <div class="text-zinc-400">Wariancja</div>
+                            <div class="text-white font-mono font-semibold">${variance}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="text-xs mb-1">Pewność modelu: ${confidence}%</div>
+                    <div class="w-full bg-zinc-700 rounded-full h-1.5">
+                        <div class="bg-zinc-400 h-1.5 rounded-full" style="width: ${confidence}%"></div>
+                    </div>
+                </div>
+                <div class="opacity-80 text-xs">
+                    ${data.details}
+                </div>
+            `;
+            result.classList.remove('hidden');
+        }
+        
+        function showError(message) {
+            result.className = 'result bg-zinc-800 border border-red-700 text-red-100 p-4 rounded-lg mt-4 text-xs';
+            result.innerHTML = `
+                <div class="font-medium text-sm mb-1">❌ Błąd</div>
+                <div>${message}</div>
+            `;
+            result.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
