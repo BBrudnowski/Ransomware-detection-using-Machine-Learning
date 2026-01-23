@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 from utils.shannon_entropy import calculate_shannon_entropy
+from utils.ML_for_ransomware import Check_if_ransomware
 import os
 import json
 
@@ -13,16 +14,23 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 with open('types.json', 'r') as f:
     FILE_TYPES = json.load(f)
 
-def check_if_ransomware(file_path):
+def check_if_ransomware(file_path, file_type_index):
     
-    entropy, variance = calculate_shannon_entropy(file_path)   
-    is_ransomware = True
-    confidence = 0.0
-    details = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'   
+    entropy, variance = calculate_shannon_entropy(file_path)
+    examined_file = {
+        'id': 0,
+        'type': file_type_index,
+        'size': os.path.getsize(file_path),
+        'entropy': entropy,
+        'variance': variance
+    }
+    
+    ml_result = Check_if_ransomware(examined_file)
+    
     return {
-        'is_ransomware': is_ransomware,
-        'confidence': confidence,
-        'details': details,
+        'is_ransomware': ml_result['is_ransomware'],
+        'confidence': ml_result['confidence'],
+        'risk_level': ml_result['risk_level'],
         'entropy': entropy,
         'variance': variance
     }
@@ -56,7 +64,7 @@ def upload_file():
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
-        result = check_if_ransomware(file_path)
+        result = check_if_ransomware(file_path, file_type_index)
         os.remove(file_path)
         
         return jsonify({
@@ -64,7 +72,7 @@ def upload_file():
             'file_type_index': file_type_index,
             'is_ransomware': result['is_ransomware'],
             'confidence': result['confidence'],
-            'details': result['details'],
+            'risk_level': result['risk_level'],
             'entropy': result.get('entropy', 0.0),
             'variance': result.get('variance', 0.0)
         })

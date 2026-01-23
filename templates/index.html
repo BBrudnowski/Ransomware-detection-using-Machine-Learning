@@ -193,7 +193,7 @@
         
         function showResult(data) {
             const isRansomware = data.is_ransomware;
-            const confidence = Math.round(data.confidence * 100);
+            const confidence = Math.round(data.confidence);
             const entropy = data.entropy ? data.entropy.toFixed(4) : 'N/A';
             const variance = data.variance ? data.variance.toFixed(4) : 'N/A';
             
@@ -230,7 +230,7 @@
                     </div>
                 </div>
                 <div class="opacity-80 text-xs">
-                    ${data.details}
+                    Poziom ryzyka: <strong>${data.risk_level}</strong>
                 </div>
             `;
             result.classList.remove('hidden');
