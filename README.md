@@ -41,7 +41,7 @@ Proces obliczania entropii dla pliku binarnego:
 
 1. Odczytanie zawartości pliku jako ciągu bajtów
 2. Policzenie częstości występowania każdego z 256 możliwych wartości bajtów
-3. Obliczenie prawdopodobieństwa dla każdej wartości: $p_i = \frac{\text{count}_i}{\text{total\_bytes}}$
+3. Obliczenie prawdopodobieństwa dla każdej wartości: p_i = count_i / total_bytes
 4. Zastosowanie wzoru Shannona z logarytmem binarnym
 
 ### 3.2 Entropia Blokowa
