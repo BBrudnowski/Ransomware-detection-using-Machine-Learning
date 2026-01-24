@@ -197,8 +197,8 @@
             const entropy = data.entropy ? data.entropy.toFixed(4) : 'N/A';
             const variance = data.variance ? data.variance.toFixed(4) : 'N/A';
             
-            const bgClass = isRansomware ? 'bg-zinc-800 border border-yellow-700' : 'bg-zinc-800 border border-zinc-700';
-            const textClass = isRansomware ? 'text-yellow-100' : 'text-zinc-100';
+            const bgClass = isRansomware ? 'bg-zinc-800 border border-red-700' : 'bg-zinc-800 border border-zinc-700';
+            const textClass = isRansomware ? 'text-red-100' : 'text-zinc-100';
             const titleEmoji = isRansomware ? '⚠️' : '✅';
             const status = isRansomware ? 'PODEJRZANY' : 'BEZPIECZNY';
             
@@ -224,7 +224,7 @@
                     </div>
                 </div>
                 <div class="mb-3">
-                    <div class="text-xs mb-1">Pewność modelu: ${confidence}%</div>
+                    <div class="text-xs mb-1">Ryzyko: ${confidence}%</div>
                     <div class="w-full bg-zinc-700 rounded-full h-1.5">
                         <div class="bg-zinc-400 h-1.5 rounded-full" style="width: ${confidence}%"></div>
                     </div>

@@ -31,8 +31,9 @@ def Check_if_ransomware(examined_file):
     df = pd.read_csv(data_path)
     target = 'label'
 
-    # Oddzielenie plików ransomware od zwykłych  
-    X = df.drop(columns=[target])
+    # Używamy tylko stabilnych cech (bez 'id', który jest losowy i szkodliwy dla generalizacji)
+    feature_cols = ['type', 'size', 'entropy', 'variance']
+    X = df[feature_cols]
     y = df[target]
 
     #Liczenie odchylenia standardowego oraz skalowanie liczb
@@ -59,38 +60,30 @@ def Check_if_ransomware(examined_file):
     examined_file_df = pd.DataFrame([examined_file])
     examined_file_df = examined_file_df[X.columns]  # Upewnia się że kolumny są w poprawnej kolejności
     
-    # Predykcja: 0 = BENIGN, 1 = RANSOMWARE
-    y_pred = model.predict(examined_file_df)[0]
-    
     # Prawdopodobieństwo dla każdej klasy
     y_pred_proba = model.predict_proba(examined_file_df)[0]
     
-    # Pewność w tym co model przewiduje
-    # Jeśli to ransomware (1) - zwróć % szansy na ransomware
-    # Jeśli to bezpieczny (0) - zwróć % szansy na bezpieczny = 100%
-    if y_pred == 1:
-        confidence = y_pred_proba[1] * 100
-    else:
-        confidence = y_pred_proba[0] * 100
+    # ZAWSZE zwracamy prawdopodobieństwo ransomware (klasa 1)
+    ransomware_probability = float(y_pred_proba[1] * 100)
     
-    # Określenie poziomu ryzyka
-    if confidence < 10:
+    # Obniżony próg decyzyjny (20% zamiast 50%) ze względu na niezbalansowane dane
+    y_pred = 1 if y_pred_proba[1] >= 0.20 else 0
+    
+    # Określenie poziomu ryzyka na podstawie prawdopodobieństwa ransomware
+    if ransomware_probability >= 80:
         risk_level = 'VERY HIGH'
-    elif confidence < 20:
+    elif ransomware_probability >= 60:
         risk_level = 'HIGH'
-    elif confidence < 30:
+    elif ransomware_probability >= 40:
         risk_level = 'MEDIUM'
-    elif confidence < 50:
+    elif ransomware_probability >= 20:
         risk_level = 'LOW'
-    elif confidence == 100:
-        risk_level = 'NO RISK'
-
     else:
         risk_level = 'VERY LOW'
     
     result = {
         'is_ransomware': bool(y_pred),
-        'confidence': round(confidence, 2),
+        'confidence': round(ransomware_probability, 2),
         'risk_level': risk_level
     }
     
