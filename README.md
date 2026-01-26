@@ -142,7 +142,7 @@ Równolegle z dataselem generuje się plik `types.json` zawierający mapowanie m
 }
 ```
 
-## 5. Entropy Sharing - Nowa Technika Ewaluac
-Najnowsze badania z 2024 roku ujawniły metodę o nazwie "Entropy Sharing", którą może stosować zaawansowany ransomware. Technika ta dzieli zaszyfrowane dane na części, rekombinuje je w sposób obniżający średnią entropię.Ma ona niski koszt obliczeniowy oraz utrudnia obejście tradycyjnych metod opartych wyłącznie na entropii.
+## 5. Entropy Sharing - Nowa Technika Ewaluacji
+Najnowsze badania z 2024 roku ujawniły metodę o nazwie "Entropy Sharing", którą może stosować zaawansowany ransomware. Technika ta dzieli zaszyfrowane dane na części, rekombinuje je w sposób obniżający średnią entropię. Ma ona niski koszt obliczeniowy oraz utrudnia obejście tradycyjnych metod opartych wyłącznie na entropii.
 
 
