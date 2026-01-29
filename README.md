@@ -27,8 +27,8 @@ Projekt implementuje aplikację webową umożliwiającą automatyczną analizę 
 
 ### Frontend
 - **Flask** - framework webowy do budowy aplikacji
-- **HTML/CSS** - interfejs użytkownika
-- **Bootstrap** - responsywny design
+- **HTML** - interfejs użytkownika
+- **TailwindCSS** - responsywny design
 
 ### Narzędzia pomocnicze
 - **Matplotlib/Seaborn** - wizualizacja danych i wyników
