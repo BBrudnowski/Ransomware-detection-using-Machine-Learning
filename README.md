@@ -1,7 +1,38 @@
-# Wykrywanie ataków typu Ransomware poprzez analize entropii (zbackupowanych) danych plikowych przy pomocy uczenia maszynowego (ML).
+# Wykrywanie ataków typu Ransomware poprzez analizę entropii danych plikowych przy pomocy uczenia maszynowego
+
 Autorzy: [Przemysław Bryzek](https://github.com/przemyslawbryzek), [Błażej Brudnowski](https://github.com/BBrudnowski)
+
 ## 1. Wstęp
 
+Ransomware stanowi jedno z najpoważniejszych zagrożeń cyberbezpieczeństwa współczesnych systemów informatycznych. Ataki tego typu mogą sparaliżować działanie całych organizacji, powodując nieodwracalne straty danych oraz ogromne koszty finansowe. Tradycyjne metody detekcji oparte na sygnaturach wirusów często okazują się niewystarczające wobec dynamicznie ewoluujących wariantów złośliwego oprogramowania.
+
+Niniejszy projekt przedstawia innowacyjne podejście do wykrywania ransomware oparte na analizie entropii Shannona plików binarnych. Entropia, jako miara losowości i nieporządku danych, stanowi skuteczny wskaźnik pozwalający odróżnić pliki zaszyfrowane przez ransomware od plików benignware. Pliki poddane szyfrowaniu wykazują charakterystycznie wysoką entropię, zbliżoną do rozkładu równomiernego, co stanowi kluczową cechę wykorzystywaną w procesie klasyfikacji.
+
+Projekt implementuje aplikację webową umożliwiającą automatyczną analizę plików pod kątem potencjalnego zainfekowania ransomware. System wykorzystuje model uczenia maszynowego wytrenowany na zbiorze danych NapierOne, zawierającym tysiące próbek plików benignware oraz ich zaszyfrowanych odpowiedników.
+
+### 1.1 Cele projektu
+
+- Implementacja algorytmu obliczania entropii Shannona dla plików binarnych
+- Budowa modelu klasyfikacyjnego opartego na cechach entropijnych
+- Stworzenie interfejsu webowego umożliwiającego łatwą analizę plików
+- Walidacja skuteczności podejścia na rzeczywistych próbkach ransomware
+
+## 1.2 Stos technologiczny
+
+### Backend i Machine Learning
+- **Python 3.x** - główny język programowania
+- **Scikit-learn** - biblioteka do uczenia maszynowego (modele klasyfikacyjne)
+- **Pandas** - przetwarzanie i analiza danych
+- **NumPy** - operacje na tablicach i obliczenia numeryczne
+
+### Frontend
+- **Flask** - framework webowy do budowy aplikacji
+- **HTML/CSS** - interfejs użytkownika
+- **Bootstrap** - responsywny design
+
+### Narzędzia pomocnicze
+- **Matplotlib/Seaborn** - wizualizacja danych i wyników
+- **Jupyter Notebook** - eksploracja danych i prototypowanie
 
 ## 2. Teoria Entropii Shannona
 
