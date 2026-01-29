@@ -177,3 +177,154 @@ Równolegle z dataselem generuje się plik `types.json` zawierający mapowanie m
 Najnowsze badania z 2024 roku ujawniły metodę o nazwie "Entropy Sharing", którą może stosować zaawansowany ransomware. Technika ta dzieli zaszyfrowane dane na części, rekombinuje je w sposób obniżający średnią entropię. Ma ona niski koszt obliczeniowy oraz utrudnia obejście tradycyjnych metod opartych wyłącznie na entropii.
 
 
+## 6. Działanie nodelu uczenia maszynowego
+Projekt wykorzystuje algorytmy uczenia maszynowego do wykrywania ransomware na podstawie statycznych cech pliku. Model ocenia prawdopodobieństwo, że analizowany plik jest złośliwy, oraz przypisuje mu poziom ryzyka.
+
+
+## Cel modelu
+
+Celem modelu jest:
+- wykrywanie potencjalnego ransomware,
+- minimalizacja ryzyka false negatives,
+- dostarczenie prawdopodobieństwa oraz czytelnego poziomu ryzyka.
+
+
+## Dane wejściowe (cechy)
+
+Model korzysta wyłącznie z cech stabilnych i istotnych z punktu widzenia analizy statycznej plików:
+
+| Cecha | Opis |
+|------|------|
+| `type` | Typ pliku (zakodowany numerycznie) |
+| `size` | Rozmiar pliku |
+| `entropy` | Entropia – miara losowości danych |
+| `variance` | Wariancja bajtów |
+
+> Pole `id` zostało celowo pominięte, ponieważ jest losowe i pogarsza zdolność generalizacji modelu.
+
+
+## Przetwarzanie danych
+
+- Wszystkie cechy numeryczne są **standaryzowane** (`StandardScaler`)
+- Preprocessing oraz model są połączone w jeden **Pipeline**
+- Zapewnia to identyczne przetwarzanie danych treningowych i predykcyjnych
+
+```text
+Dane → Skalowanie → Model ML → Predykcja
+```
+
+## RandomForestClassifier – szczegółowe wyjaśnienie działania
+
+`RandomForestClassifier` jest algorytmem zespołowym, który łączy wiele drzew decyzyjnych w jeden model o lepszej jakości predykcji i większej odporności na błędy.
+
+
+### Drzewo decyzyjne – fundament Random Forest
+
+Pojedyncze drzewo decyzyjne działa jak sekwencja pytań logicznych:
+
+- na każdym węźle wybierana jest cecha i próg (np. `entropy > 7.3`),
+- dane są dzielone na dwa podzbiory,
+- proces trwa aż do osiągnięcia liścia decyzyjnego,
+- liść zwraca decyzję klasyfikacyjną.
+
+Zalety:
+- prostota,
+- łatwa interpretacja.
+
+Wady:
+- bardzo wysoka podatność na **overfitting**,
+- duża wrażliwość na szum w danych.
+
+---
+
+### Idea lasu losowego (Random Forest)
+
+Random Forest eliminuje wady pojedynczych drzew poprzez **losowość i zespołowość**.
+
+Algorytm:
+1. Tworzy wiele drzew decyzyjnych (np. 200).
+2. Każde drzewo:
+   - uczy się na losowej próbce danych (bootstrap sampling),
+   - w każdym węźle widzi tylko losowy podzbiór cech.
+3. Każde drzewo podejmuje niezależną decyzję.
+4. Wynik końcowy to **głosowanie większościowe**.
+
+```text
+Drzewo 1 → ransomware
+Drzewo 2 → ransomware
+Drzewo 3 → benign
+...
+Finalna decyzja → ransomware
+```
+
+### Rola losowości
+
+Losowość w algorytmie Random Forest występuje na dwóch kluczowych poziomach:
+
+- **losowy wybór próbek danych** (bootstrap sampling),
+- **losowy wybór cech** przy każdym podziale w drzewie.
+
+Dzięki temu:
+- poszczególne drzewa różnią się od siebie,
+- błędy pojedynczych drzew nie kumulują się,
+- model lepiej generalizuje na nowych, nieznanych danych.
+
+Losowość jest kluczowym elementem, który odróżnia Random Forest od klasycznych drzew decyzyjnych i znacząco poprawia jego stabilność.
+
+
+### Prawdopodobieństwa klas
+
+Random Forest umożliwia estymację prawdopodobieństw klas zamiast zwracania wyłącznie decyzji binarnej.
+
+Mechanizm:
+- każde drzewo w lesie oddaje głos na jedną z klas,
+- prawdopodobieństwo klasy to odsetek drzew głosujących na tę klasę.
+
+Przykład:
+```text
+Liczba drzew: 200
+Ransomware:   140
+Benign:        60
+
+P(ransomware) = 140 / 200 = 70%
+```
+Takie podejście jest szczególnie istotne w cyberbezpieczeństwie, gdzie kluczowa jest ocena poziomu ryzyka, a nie jedynie binarna decyzja o tym, czy plik jest złośliwy. Pozwala to na elastyczne reagowanie systemu w zależności od stopnia zagrożenia.
+
+
+### Random Forest a niezbalansowane dane
+
+W problemach związanych z wykrywaniem malware dane są zazwyczaj niezbalansowane – liczba plików benign znacząco przewyższa liczbę próbek ransomware.
+
+W projekcie zastosowano następujące mechanizmy:
+- `class_weight = 'balanced'`, który zwiększa wagę błędów popełnianych na klasie mniejszościowej,
+- decyzję opartą na prawdopodobieństwie, a nie standardowym progu 50%.
+
+Efektem jest:
+- zwiększona czułość modelu,
+- zmniejszone ryzyko przeoczenia realnego zagrożenia,
+- bardziej konserwatywne podejście do bezpieczeństwa.
+
+
+### Dlaczego Random Forest w tym projekcie?
+
+Random Forest został wybrany jako główny algorytm klasyfikacyjny, ponieważ:
+- dobrze radzi sobie z danymi tablicowymi,
+- jest odporny na overfitting,
+- nie wymaga skomplikowanego tuningu hiperparametrów,
+- umożliwia analizę ważności cech,
+- zapewnia stabilne i powtarzalne wyniki.
+
+Algorytm ten stanowi kompromis pomiędzy skutecznością, interpretowalnością oraz złożonością obliczeniową.
+
+
+### Ograniczenia algorytmu
+
+Pomimo licznych zalet, Random Forest posiada również pewne ograniczenia:
+
+- mniejsza interpretowalność niż pojedyncze drzewo decyzyjne,
+- wolniejsze działanie przy bardzo dużych zbiorach danych,
+- brak zdolności do uczenia zależności sekwencyjnych i czasowych.
+
+Z tego powodu model traktowany jest jako solidna baza, a nie rozwiązanie ostateczne.
+
+
