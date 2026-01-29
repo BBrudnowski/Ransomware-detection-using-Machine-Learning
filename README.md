@@ -235,7 +235,6 @@ Wady:
 - bardzo wysoka podatność na **overfitting**,
 - duża wrażliwość na szum w danych.
 
----
 
 ### Idea lasu losowego (Random Forest)
 
